@@ -33,6 +33,7 @@ public:
 		for (int i = 0; i < this->chi.size(); i++) {
 			if (this->chi[i] == chi) {
 				this->chi.erase(this->chi.begin() + i);
+				break;
 			}
 		}
 		return;
