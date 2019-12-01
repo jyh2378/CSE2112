@@ -1,131 +1,104 @@
 #include <iostream>
 #include <vector>
+#define NOT_EXPLORED 0
+#define DISCOVERY 1
+#define BACK 2
+
+using namespace std;
 
 class vertex {
-private:
+public:
+	int data;
 	int degree;
 	bool visited; // check vertex is visited or not by DFS
-public:
-	vertex() {
+	vector<vertex*> adj_list;
+
+	vertex(int data) {
+		this->data = data;
 		this->degree = 0;
 		this->visited = false;
-	}
-	void increase_deg() {
-		this->degree++;
-	}
-	void decrease_deg() {
-		this->degree--;
-	}
-
-	void set_visited() {
-		this->visited = true;
-	}
-	bool get_visited() {
-		return this->visited;
 	}
 };
 
 class edge {
-private:
+public:
 	vertex* src;
 	vertex* dst;
-	bool explore; // edge is explored?
-	bool discovery; // discovery edge list
-	bool back; // back edge list
-public:
+	int data;
+	bool edge_stat; // edge status
+
 	edge(vertex* src, vertex* dst) {
 		this->src = src;
 		this->dst = dst;
-		this->explore = false;
-		this->discovery = false;
-		this->back = false;
-	}
-	bool get_explore() {
-		return this->explore;
-	}
-	void set_explore() {
-		this->explore = true;
-	}
-	bool get_discovery() {
-		return this->discovery;
-	}
-	void set_discovery() {
-		this->discovery = true;
-	}
-	bool get_back() {
-		return this->back;
-	}
-	void set_back() {
-		this->back = true;
+		this->edge_stat = NOT_EXPLORED;
 	}
 };
 
 class graph {
 private:
-	vertex** v;
-	edge*** matrix;
-	std::vector<edge*> e;
+	vector<vertex*> vertex_list;
+	vector<edge*> edge_list;
 	int v_sz;
-	int max_sz;
 public:
-	graph(int sz) {
-		this->max_sz = sz;
+	graph() {
 		this->v_sz = 0;
-
-		this->v = new vertex*[sz];
-		for (int i = 0; i <= sz; i++) v[i] = NULL;
-
-		this->matrix = new edge**[sz];
-		for (int i = 0; i <= sz; i++) {
-			matrix[i] = new edge*[sz];
-			for (int j = 0; j <= sz; j++) matrix[i][j] = NULL;
-		}
-	}
-	void insert_vertex(int n) {
-		if (v_sz + 1 > max_sz) return; // if graph is full, exit
-		if (v[n] == NULL) {
-			vertex* new_v = new vertex();
-			v[n] = new_v;
-			this->v_sz++;
-		}
-		else {
-			return; // if there is already vertex, exit
-		}
 	}
 
-	void insert_edge(int src, int dst) {
-		if (v[src] == NULL || v[dst] == NULL) return; // if there isn't source or destination, exit
-		if (matrix[src][dst] != NULL || matrix[dst][src] != NULL) return; // if there is already edge, exit
-
-		edge* new_e = new edge(v[src], v[dst]);
-		matrix[src][dst] = new_e;
-		matrix[dst][src] = new_e;
-
-		v[src]->increase_deg();
-		v[dst]->increase_deg();
-
-		e.push_back(new_e);
-	}
-
-	void dfs(int start) {
-
-		if (v[start]->get_visited()) return;
-		v[start]->set_visited();
-		for (int i = 0; i < max_sz; i++) { // adjacency matrix - check all rows
-			if (matrix[start][i] != NULL) {
-				if (v[i]->get_visited() == false) { // if next vertex isn't visited
-					matrix[start][i]->set_explore();
-					matrix[start][i]->set_discovery();
-					dfs(i);
-				}
-				else { // if next vertex is visited
-					if (matrix[start][i]->get_discovery()) continue; // if this edge is discovery, exit
-					else {
-						matrix[start][i]->set_explore();
-						matrix[start][i]->set_back(); // because next vertex is visited, so this edge set to 'back'
-					}
-				}
+	vertex* findvertex(int data) {
+		vertex* v = NULL;
+		for (int i = 0; i < vertex_list.size(); i++) {
+			if (vertex_list[i]->data == data) {
+				v = vertex_list[i];
+				break;
 			}
 		}
+		return v;
+	}
+
+	edge* findedge(vertex* src, vertex* dst) {
+		edge* e = NULL;
+		for (int i = 0; i < edge_list.size(); i++) {
+			if (edge_list[i]->src == src && edge_list[i]->dst == dst) {
+				e = edge_list[i];
+				break;
+			}
+		}
+		return e;
+	}
+
+	void insert_vertex(int data) {
+		if (findvertex(data) == NULL) {
+			vertex* new_v = new vertex(data);
+			vertex_list.push_back(new_v);
+		}
+	}
+
+	void insert_edge(int src_data, int dst_data) {
+		vertex* src = findvertex(src_data);
+		vertex* dst = findvertex(dst_data);
+		if (findedge(src, dst) == NULL) {
+			edge* new_e = new edge(src, dst);	// generate edge 
+			edge_list.push_back(new_e);
+		}
+
+		src->adj_list.push_back(dst);			// insert vertex to their adj list
+		dst->adj_list.push_back(src);
+	}
+
+	void dfs(vertex* v) {
+		if (v->visited) return;
+		v->visited = true;
+		for (int i = 0; i < v->adj_list.size(); i++) { // check adjacency list
+			vertex* next_v = v->adj_list[i];
+			edge* e = findedge(v, next_v);
+			if (next_v->visited == false) { // if next vertex isn't visited
+				e->edge_stat = DISCOVERY;
+				dfs(next_v);
+			}
+			else { // if next vertex is visited
+				e->edge_stat = BACK;
+			}
+		}
+		return;
 	}
 };
