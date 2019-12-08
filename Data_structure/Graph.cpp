@@ -25,7 +25,7 @@ public:
 	Vertex* src;
 	Vertex* dst;
 	int data;
-	bool edge_stat; // edge status
+	int edge_stat; // edge status
 
 	Edge(Vertex* src, Vertex* dst) {
 		this->src = src;
@@ -38,10 +38,17 @@ class Graph {
 private:
 	vector<Vertex*> vertex_list;
 	vector<Edge*> edge_list;
-	int v_sz;
+	Edge*** edge_matrix;
+	int mapping_idx = 0;
 public:
-	Graph() {
-		this->v_sz = 0;
+	Graph() {	// make adjacency matrix
+		edge_matrix = new Edge** [1000];
+		for (int i = 0; i < 1000; i++) {
+			edge_matrix[i] = new Edge* [1000];
+			for (int j = 0; j < 1000; j++) {
+				edge_matrix[i][j] = NULL;
+			}
+		}
 	}
 
 	Vertex* findvertex(int data) {
@@ -55,14 +62,8 @@ public:
 		return v;
 	}
 
-	Edge* findedge(Vertex* src, Vertex* dst) {
-		Edge* e = NULL;
-		for (int i = 0; i < edge_list.size(); i++) {
-			if (edge_list[i]->src == src && edge_list[i]->dst == dst) {
-				e = edge_list[i];
-				break;
-			}
-		}
+	Edge* findedge(Vertex* src, Vertex* dst) { // find edge with adj matrix
+		Edge* e = edge_matrix[src->data][dst->data];
 		return e;
 	}
 
@@ -77,11 +78,16 @@ public:
 		Vertex* src = findvertex(src_data);
 		Vertex* dst = findvertex(dst_data);
 		if (findedge(src, dst) == NULL) {
-			Edge* new_e = new Edge(src, dst);	// generate edge 
+			Edge* new_e = new Edge(src, dst);   // generate edge 
 			edge_list.push_back(new_e);
+			src->adj_list.push_back(dst);         // insert vertex to their adj list
+			dst->adj_list.push_back(src);
+			edge_matrix[src->data][dst->data] = new_e;
+			edge_matrix[dst->data][src->data] = new_e; // because this graph is undirected graph
+			src->degree++;
+			dst->degree++;
 		}
-
-		src->adj_list.push_back(dst);			// insert vertex to their adj list
+		else cout << -1 << endl;
 	}
 
 	void dfs(Vertex* v) {
@@ -91,15 +97,12 @@ public:
 		for (int i = 0; i < v->adj_list.size(); i++) { // check adjacency list
 			Vertex* next_v = v->adj_list[i];
 			Edge* e1 = findedge(v, next_v);
-			Edge* e2 = findedge(next_v, v);
 			if (next_v->visited == false) { // if next vertex isn't visited
 				e1->edge_stat = DISCOVERY;
-				e2->edge_stat = DISCOVERY;
 				dfs(next_v);
 			}
 			else { // if next vertex is visited
 				e1->edge_stat = BACK;
-				e2->edge_stat = BACK;
 			}
 		}
 		return;
