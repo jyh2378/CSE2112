@@ -1,4 +1,3 @@
 # CSE2112
-(2018-2)Data Structure
 
-(2019-2)Data Structure
+자료구조 실습 수업에 사용하기 위한 Template 모음입니다.
